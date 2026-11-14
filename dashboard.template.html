@@ -1,0 +1,257 @@
+<!doctype html>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Internship Pipeline</title>
+<style>
+.chart{overflow-x:auto;background:#f5f9fc;border-radius:16px;padding:18px;margin-bottom:16px}
+.chart-body{position:relative;min-width:580px}
+.chart canvas{display:block;width:100%}
+.chart button.node{position:absolute;right:0;width:180px;text-align:left;background:#fff;color:#173047;border:1px solid #bccdd8;transform:translateY(-50%);font-weight:650}
+.chart button.node[aria-pressed=true]{background:#b4efd8;border-color:#24745e}
+.chart .source{position:absolute;left:0;top:50%;transform:translateY(-50%);color:#173047;font-weight:700}
+</style>
+<style>
+:root{color-scheme:light}
+body{font-family:"Inter",system-ui,sans-serif}
+main{display:grid;gap:12px}
+main h1{font-size:clamp(34px,6vw,60px);letter-spacing:-.055em}
+main h2,main p,main nav{margin:0}
+main h2{margin-top:20px}
+main button,main input,main select{border-radius:8px}
+main .chart{background:#fff;border:1px solid #d7e2ed;box-shadow:0 12px 34px #243c5710}
+main details,main li{background:#fff;border-color:#d7e2ed}
+main input,main button,main select{background:#fff;color:#20364a;border:1px solid #9dadbd;padding:9px}
+main a{color:#126859}
+main p{color:#43576b}
+main #results{max-height:44rem;overflow:auto}
+main :focus-visible{outline:3px solid #087d70;outline-offset:2px}
+html body{background:#edf3f8;color:#152b40;padding:clamp(14px,4vw,44px)}
+</style>
+<style>body{max-width:1050px;margin:auto;padding:32px;background:#111b27;color:#f2f7fc;font:16px system-ui}h1{font-size:clamp(36px,7vw,70px);margin:0}p{color:#afc2d8}nav{display:flex;gap:8px;flex-wrap:wrap}button,input,details,li{background:#203247;border:1px solid #546980;color:inherit;border-radius:8px;padding:10px;font:inherit}button,summary{cursor:pointer}button[aria-pressed=true]{background:#9ce9c7;color:#123326}a{color:#9ce9c7}details,li{margin:8px 0}form{display:flex;flex-wrap:wrap;gap:10px}label{display:grid;gap:4px}input{max-width:95%}</style>
+<main><h1>Internship pipeline</h1><p>Local application tracker</p><h2>Application flow</h2><p>Applied → Response → Assessment → Interview → Offer</p><nav id="flow" aria-label="Application stages"></nav><p><label>Search applications<input id="search" type="search"></label></p><div id="results"></div>
+<h2>Summer 2027 shortlist</h2><p>Save postings you want to apply to. Your browser keeps this list.</p><form id="form"><label>Company<input name="company" required></label><label>Role<input name="role" required></label><label>Posting URL<input name="url" type="url" required></label><button>Save internship</button></form><p id="status" role="status"></p><ul id="saved"></ul></main>
+<script>
+const records=[];
+const get=id=>document.getElementById(id);
+function make(tag,label){const node=document.createElement(tag);node.textContent=label;return node;}
+function link(label,url){const node=make("a",label);node.href=url;return node;}
+const stages=["All","Applied","Response","Assessment","Interview","Offer","Rejected","Closed","Withdrawn","Needs review"];
+const flow = get("flow");
+flow.previousElementSibling.textContent = "Band width shows how many applications are currently at each stage. Select a stage to see its applications.";
+const chart = make("div", "");
+chart.className = "chart";
+const plot = make("div", "");
+plot.className = "chart-body";
+const canvas = make("canvas", "");
+canvas.setAttribute("aria-hidden", "true");
+const source = make("span", "Applications · " + records.length);
+source.className = "source";
+plot.append(canvas, source);
+chart.append(plot);
+flow.before(chart);
+const unit = Math.min(4, 300 / Math.max(1, records.length));
+function updateChart(visible) {
+plot.querySelectorAll(".node").forEach(button => button.remove());
+chartStages = stages.slice(1).map((name, index) => ({
+  name,
+  count: visible.filter(record => record.stage === name).length,
+  color: ["#20aeba","#528ce8","#855ed1","#26896e","#3a8553","#d36578","#c47836","#687e9c","#917048"][index]
+})).filter(item => item.count > 0);
+let laneTop = 20;
+for (const item of chartStages) {
+  const laneHeight = Math.max(54, item.count * unit + 14);
+  item.center = laneTop + laneHeight / 2;
+  laneTop += laneHeight;
+}
+height = laneTop + 20;
+canvas.style.height = height + "px";
+for (const item of chartStages) {
+  const button = make("button", item.name + " · " + item.count);
+  button.className = "node";
+  button.dataset.stage = item.name;
+  button.style.top = item.center + "px";
+  button.onclick = () => { stage = item.name; render(); };
+  plot.append(button);
+}
+drawFlow();
+}
+let chartStages = [];
+let height = 0;
+function drawFlow() {
+  const width = plot.clientWidth;
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(ratio, ratio);
+  const left = 145;
+  const right = width - 190;
+  const middle = (left + right) / 2;
+  let start = (height - records.length * unit) / 2;
+  ctx.fillStyle = "#117e8b";
+  ctx.fillRect(left - 8, start, 8, records.length * unit);
+  chartStages.forEach(item => {
+    const size = item.count * unit;
+    const end = item.center - size / 2;
+    ctx.beginPath();
+    ctx.moveTo(left, start);
+    ctx.bezierCurveTo(middle, start, middle, end, right, end);
+    ctx.lineTo(right, end + size);
+    ctx.bezierCurveTo(middle, end + size, middle, start + size, left, start + size);
+    ctx.closePath();
+    ctx.fillStyle = item.color + "85";
+    ctx.fill();
+    ctx.fillStyle = item.color;
+    ctx.fillRect(right, end, 7, size);
+    start += size;
+  });
+}
+if (typeof ResizeObserver === "function") new ResizeObserver(drawFlow).observe(plot);
+else window.addEventListener("resize", drawFlow);
+const matches=(record,stage)=>stage==="All"||(stage==="Needs review"?record.events.some(event=>event.stage===stage):record.stage===stage);
+let stage="All";
+const reviewKey = "cs191-email-reviews";
+let reviews = {};
+try { reviews = JSON.parse(localStorage.getItem(reviewKey) || "{}") || {}; }
+catch { /* Reviews remain available when browser storage permits saving. */ }
+const reviewOptions = ["Applied", "Response", "Assessment", "Interview", "Offer", "Rejected", "Closed", "Withdrawn", "Dismissed"];
+const sync = make("button", "Refresh Gmail snapshot");
+const syncStatus = make("p", "");
+syncStatus.setAttribute("role", "status");
+sync.onclick = async () => {
+  const prompt = "Sync my applications using Gmail and rebuild the dashboard.";
+  try {
+    await navigator.clipboard.writeText(prompt);
+    syncStatus.textContent = "Copied. Paste the request into your Codex chat, then reload this page after sync.";
+  } catch {
+    syncStatus.textContent = "In Codex, send: “" + prompt + "” Then reload this page after sync.";
+  }
+};
+document.querySelector("h1").after(sync, syncStatus);
+function applyReviews(record) {
+  const events = record.events.map(event => ({
+    ...event, reviewable: event.stage === "Needs review",
+    stage: event.stage === "Needs review" ? reviews[event.id] || event.stage : event.stage
+  }));
+  const confirmed = events.find(event => !["Needs review", "Dismissed"].includes(event.stage));
+  const original = record.events.find(event => event.stage !== "Needs review");
+  const stage = confirmed && (!original || confirmed.date > original.date)
+    ? confirmed.stage : record.stage;
+  return { ...record, stage, events };
+}
+function render(){
+  const query=get("search").value.trim().toLowerCase();
+  const visible = records.map(applyReviews);
+  updateChart(visible);
+  const rows=visible.filter(r=>matches(r,stage)&&(r.company+" "+r.role).toLowerCase().includes(query));
+  get("results").replaceChildren(...rows.map(r=>{
+    const card=make("details","");
+    card.append(make("summary",r.company+" · "+r.role+" · "+r.stage));
+    for(const e of r.events){
+      const row=make("p",e.date+" · "+e.stage+" · ");
+      row.append(link("Open Gmail",e.url));
+      if (e.reviewable) {
+        const reason = make("span", " Review reason: The Gmail preview did not clearly establish the outcome. Open the original email to confirm the stage.");
+        const select = make("select", "");
+        select.setAttribute("aria-label", "Review email dated " + e.date + " for " + r.role);
+        for (const choice of ["Needs review", ...reviewOptions]) {
+          const option = make("option", choice);
+          option.selected = choice === e.stage;
+          select.append(option);
+        }
+        const feedback = make("span", "");
+        feedback.setAttribute("role", "status");
+        select.onchange = () => {
+          const next = { ...reviews, [e.id]: select.value };
+          try { localStorage.setItem(reviewKey, JSON.stringify(next)); }
+          catch { select.value = e.stage; feedback.textContent = " Browser storage is unavailable."; return; }
+          Object.assign(reviews, next);
+          render();
+          syncStatus.textContent = "Review saved.";
+        };
+        row.append(reason, " ", select, feedback);
+      }
+      card.append(row);
+    }
+    return card;
+  }));
+  if(!rows.length)get("results").append(make("p","No matching applications."));
+  for(const button of document.querySelectorAll("button[data-stage]")){
+    button.setAttribute("aria-pressed",button.dataset.stage===stage);
+    if (!button.classList.contains("node")) {
+      button.textContent = button.dataset.stage + " · " + visible.filter(record => matches(record, button.dataset.stage)).length;
+    }
+  }
+}
+for(const name of stages){
+  const button=make("button",name+" · "+records.filter(r=>matches(r,name)).length);
+  button.dataset.stage=name;
+  button.onclick=()=>{stage=name;render();};
+  get("flow").append(button);
+}
+get("search").oninput=render;
+render();
+const key="cs191-shortlist";
+let saved=[];
+function show(){
+  get("saved").replaceChildren(...saved.map((r,i)=>{
+    const row=make("li","");
+    const remove=make("button","Remove");
+    remove.onclick=()=>persist(saved.filter((_,index)=>index!==i));
+    row.append(link(r.company+" · "+r.role,r.url)," ",remove);
+    return row;
+  }));
+}
+function persist(next){
+  try{localStorage.setItem(key,JSON.stringify(next));}
+  catch{get("status").textContent="This browser blocked shortlist storage.";return false;}
+  saved=next;
+  show();
+  get("status").textContent="Shortlist updated.";
+  return true;
+}
+try{saved=JSON.parse(localStorage.getItem(key)||"[]");show();}
+catch{saved=[];get("status").textContent="Could not load the shortlist.";}
+get("form").onsubmit=event=>{
+  event.preventDefault();
+  const form=event.currentTarget;
+  const fields=new FormData(form);
+  const company=fields.get("company").trim();
+  const role=fields.get("role").trim();
+  const url=new URL(fields.get("url"));
+  if(!company||!role||!["https:","http:"].includes(url.protocol)){
+    get("status").textContent="Enter a company, role, and web posting URL.";
+    return;
+  }
+  if(saved.some(r=>r.url===url.href)){get("status").textContent="This posting is already saved.";return;}
+  if(persist([...saved,{company,role,url:url.href}]))form.reset();
+};
+</script>
+<style>
+#internships{margin-top:32px;padding:clamp(18px,4vw,36px);background:#fff;color:#152b40;border:1px solid #ccd9e4;border-radius:18px}
+#internships a{color:#07594e;font-weight:700}
+#internships p{color:#33485c}
+#internships ul{list-style:none;padding:0}
+#internships li{background:#eef5f8;color:#152b40;border-color:#c3d3df;padding:14px}
+#internships form{margin-top:20px;align-items:end}
+#internships input{background:#fff;color:#152b40;border-color:#728597}
+#internships button{background:#07594e;color:#fff;border-color:#07594e}
+#internships :focus-visible{outline:3px solid #087d70;outline-offset:3px}
+</style>
+<section id="internships" aria-labelledby="discovery-heading">
+  <h2 id="discovery-heading">Find internships</h2>
+  <label for="resume">Attach your résumé (PDF)</label>
+  <input id="resume" type="file" accept=".pdf,application/pdf" aria-describedby="resume-status">
+  <p id="resume-status" role="status">Choose a PDF to save it in this browser.</p>
+  <div id="match-profile"></div>
+  <p>Optional public board search. These results are unscored and their graduation requirements are unchecked.</p>
+  <form id="discovery">
+    <label>Greenhouse board name <input name="board" required pattern="[A-Za-z0-9_\\-]+" value="vercel"></label>
+    <label>Role keyword <input name="keywords" placeholder="Software"></label>
+    <button>Search board</button>
+  </form>
+  <p id="discovery-status" role="status"></p>
+  <ul id="listings"></ul>
+</section>
+<script src="./discovery.js"></script>
+<script src="./private/resume-data.js"></script>
+<script src="./resume-match.js"></script>

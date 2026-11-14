@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="referrer" content="no-referrer-when-downgrade">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Application Tracker</title>
+<link rel="stylesheet" href="./style.css">
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script type="module" src="./app.js"></script>
+<main>
+  <header><p class="eyebrow">PERSONAL TRACKER</p><h1>Applications</h1></header>
+  <section aria-labelledby="gmail-heading">
+    <h2 id="gmail-heading">Gmail import</h2>
+    <p>Find one clear application confirmation in Gmail and save it in this browser.</p>
+    <label for="client-id">Google OAuth web client ID</label>
+    <input id="client-id" type="text" spellcheck="false" autocomplete="off" placeholder="…apps.googleusercontent.com">
+    <div class="actions">
+      <button id="connect" type="button" disabled>Connect Gmail</button>
+      <button id="import" type="button" disabled>Import one application</button>
+      <button id="disconnect" type="button" disabled>Disconnect</button>
+    </div>
+    <p id="status" role="status">Loading saved applications…</p>
+  </section>
+  <section aria-labelledby="applied-heading">
+    <h2 id="applied-heading">Applied <span id="count"></span></h2>
+    <p id="empty">No applications yet.</p>
+    <ul id="applications"></ul>
+  </section>
+</main>
+</html>

@@ -1,0 +1,11 @@
+# Application Tracker Roadmap
+
+- [x] **Milestone 1 · Import one application through Codex.** Use the existing Gmail connector to find a clear confirmation. Save the company, role, date, and Gmail link in private/applications.md. Stop after one verified match. Verify the file contains one entry and the source identifies the same employer and role.
+- [ ] **Milestone 2 · Sync recruiting updates on demand.** Start from a chosen date and record completed scan coverage. Add dated timelines, manual corrections, and a review queue. Verify that repeat syncs deduplicate by message ID and older emails preserve newer stages.
+- [ ] **Next milestone · Find and rank Summer 2027 internships across ten sources.** Evaluate LinkedIn, Indeed, Handshake, Glassdoor, Wellfound, Simplify, Built In, Greenhouse, Lever, and Ashby. Record which sources support public access, which can be searched through public listings, and which require a login or manual links. Use no additional account connections. Deduplicate by employer and requisition or canonical posting link. Match against confirmed résumé skills, projects, and experience level. Show a transparent fit percentage, evidence, missing requirements, and a direct employer application link. Show the last check and source coverage. Treat fit as a rubric score, not a hiring probability.
+- [ ] **Milestone 4 · Link saved roles to the pipeline.** Support Mark applied and link unambiguous Gmail confirmations to saved roles. Verify that opening a posting leaves it saved and that applying creates one tracker entry.
+- [ ] **Optional · Add a dashboard.** Display the saved pipeline and timelines in a browser. Verify mobile and keyboard use. Gmail sync runs through Codex.
+
+- [ ] **Milestone 5 · Portable review decisions.** Back up and restore decisions by Gmail message ID, apply them to the tracker during sync, and retain an undo history.
+- [ ] **Priority after internship matching · Application action queue.** Show interview dates, assessment deadlines, and follow-ups with source links. Offer calendar downloads.
+- [ ] **Milestone 7 · Track actual application journeys.** Draw observed stage transitions, add cohort filters, and measure time to first reply.
